@@ -4,15 +4,15 @@
         <key>CFBundlePackageType</key>
             <string>APPL</string>
         <key>CFBundleName</key>
-            <string>My Product</string>
+            <string>Meeting Transcriber</string>
         <key>CFBundleExecutable</key>
             <string>meeting-transcriber</string>
         <key>CFBundleIdentifier</key>
-            <string>com.example.meetingtranscriber</string>
+            <string>com.dannygim.meeting-transcriber</string>
         <key>CFBundleVersion</key>
             <string>0.1.0</string>
         <key>CFBundleGetInfoString</key>
-            <string>This is a comment</string>
+            <string>On-device meeting audio transcription app</string>
         <key>CFBundleShortVersionString</key>
             <string>0.1.0</string>
         <key>CFBundleIconFile</key>
@@ -24,6 +24,8 @@
         <key>NSHighResolutionCapable</key>
             <string>true</string>
         <key>NSHumanReadableCopyright</key>
-            <string>© 2026, My Company</string>
+            <string>© 2026, dannygim</string>
+        <key>NSMicrophoneUsageDescription</key>
+            <string>Meeting音声を録音して文字起こしするために使用します</string>
     </dict>
 </plist>

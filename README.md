@@ -1,59 +1,81 @@
-# Welcome to Your New Wails3 Project!
+# Meeting Transcriber
 
-Congratulations on generating your Wails3 application! This README will guide you through the next steps to get your project up and running.
+On-device meeting audio transcription app for macOS. Records audio via PortAudio and transcribes using whisper.cpp — everything runs locally, no cloud services needed.
 
-## Getting Started
+Built with [Wails v3](https://v3.wails.io/) (Go + React + TypeScript).
 
-1. Navigate to your project directory in the terminal.
+## Features
 
-2. To run your application in development mode, use the following command:
+- Record meeting audio with pause/resume support
+- On-device transcription via whisper.cpp (no data leaves your machine)
+- Save transcriptions as Markdown files
+- Dark theme macOS-native UI
 
-   ```
-   wails3 dev
-   ```
+## Prerequisites
 
-   This will start your application and enable hot-reloading for both frontend and backend changes.
+```bash
+brew install portaudio whisper-cpp
+```
 
-3. To build your application for production, use:
+Download a Whisper model (choose one):
 
-   ```
-   wails3 build
-   ```
+```bash
+# Large v3 (best quality, ~3GB)
+mkdir -p models && curl -L -o models/ggml-large-v3.bin \
+  https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
 
-   This will create a production-ready executable in the `build` directory.
+# Medium (balanced, ~1.5GB)
+mkdir -p models && curl -L -o models/ggml-medium.bin \
+  https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin
 
-## Exploring Wails3 Features
+# Base (fastest, ~142MB)
+mkdir -p models && curl -L -o models/ggml-base.bin \
+  https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
+```
 
-Now that you have your project set up, it's time to explore the features that Wails3 offers:
+## Development
 
-1. **Check out the examples**: The best way to learn is by example. Visit the `examples` directory in the `v3/examples` directory to see various sample applications.
+```bash
+# Install frontend dependencies
+cd frontend && npm install && cd ..
 
-2. **Run an example**: To run any of the examples, navigate to the example's directory and use:
+# Run in development mode (hot-reload)
+wails3 dev
+```
 
-   ```
-   go run .
-   ```
+## Build
 
-   Note: Some examples may be under development during the alpha phase.
+```bash
+wails3 task build
+```
 
-3. **Explore the documentation**: Visit the [Wails3 documentation](https://v3.wails.io/) for in-depth guides and API references.
-
-4. **Join the community**: Have questions or want to share your progress? Join the [Wails Discord](https://discord.gg/JDdSxwjhGf) or visit the [Wails discussions on GitHub](https://github.com/wailsapp/wails/discussions).
+The built `.app` bundle will be in the `bin/` directory.
 
 ## Project Structure
 
-Take a moment to familiarize yourself with your project structure:
+```
+├── main.go                  # Application entry point
+├── services/
+│   ├── audio.go             # AudioService (PortAudio recording, WAV output)
+│   └── transcriber.go       # TranscribeService (whisper-cpp CLI integration)
+├── frontend/
+│   ├── src/
+│   │   ├── App.tsx          # Main app component
+│   │   ├── hooks/           # useRecorder, useTranscription
+│   │   └── components/      # RecordButton, Timer, TranscriptView, etc.
+│   └── public/style.css     # Dark theme styles
+├── build/
+│   ├── config.yml           # Wails build config
+│   └── darwin/              # macOS-specific config (Info.plist)
+└── models/                  # Whisper model files (gitignored)
+```
 
-- `frontend/`: Contains your frontend code (HTML, CSS, JavaScript/TypeScript)
-- `main.go`: The entry point of your Go backend
-- `app.go`: Define your application structure and methods here
-- `wails.json`: Configuration file for your Wails project
+## How It Works
 
-## Next Steps
+1. **Record**: Click "Start Recording" to capture audio via PortAudio (16kHz, mono, 16-bit PCM)
+2. **Stop & Transcribe**: Click "Stop & Transcribe" to save a WAV file and run whisper-cpp
+3. **Save**: Save the transcription as a Markdown file to `~/Documents/Transcriptions/`
 
-1. Modify the frontend in the `frontend/` directory to create your desired UI.
-2. Add backend functionality in `main.go`.
-3. Use `wails3 dev` to see your changes in real-time.
-4. When ready, build your application with `wails3 build`.
+## License
 
-Happy coding with Wails3! If you encounter any issues or have questions, don't hesitate to consult the documentation or reach out to the Wails community.
+MIT
