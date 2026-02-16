@@ -1,0 +1,58 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - skip: true
+
+archives:
+  - id: macos
+    format: zip
+    name_template: "meeting-transcriber_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - bin/meeting-transcriber.app/**/*
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+
+release:
+  github:
+    owner: dannygim
+    name: meeting-transcriber
+  draft: false
+  prerelease: auto
+  name_template: "v{{ .Version }}"
+
+brews:
+  - repository:
+      owner: dannygim
+      name: homebrew-tap
+    directory: Casks
+    homepage: "https://github.com/dannygim/meeting-transcriber"
+    description: "On-device meeting audio transcription app powered by whisper.cpp"
+    license: "MIT"
+    caveats: |
+      This app requires the following dependencies:
+        brew install portaudio whisper-cpp
+
+      You also need to download a Whisper model:
+        mkdir -p ~/models && curl -L -o ~/models/ggml-large-v3.bin \
+          https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
+
+      Since this app is unsigned, you may need to allow it in System Preferences > Security & Privacy.
+    install: |
+      prefix.install "meeting-transcriber.app"
+    dependencies:
+      - name: portaudio
+      - name: whisper-cpp

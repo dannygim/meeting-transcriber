@@ -1,54 +1,113 @@
-import { useState, useEffect } from 'react'
-import {Events, WML} from "@wailsio/runtime";
-import {GreetService} from "../bindings/changeme";
+import { useEffect, useRef } from 'react'
+import { useRecorder } from './hooks/useRecorder'
+import { useTranscription } from './hooks/useTranscription'
+import { RecordButton } from './components/RecordButton'
+import { PauseResumeButton } from './components/PauseResumeButton'
+import { StopButton } from './components/StopButton'
+import { Timer } from './components/Timer'
+import { TranscriptView } from './components/TranscriptView'
+import { Spectrum } from './components/Spectrum'
 
 function App() {
-  const [name, setName] = useState<string>('');
-  const [result, setResult] = useState<string>('Please enter your name below 👇');
-  const [time, setTime] = useState<string>('Listening for Time event...');
-
-  const doGreet = () => {
-    let localName = name;
-    if (!localName) {
-      localName = 'anonymous';
-    }
-    GreetService.Greet(localName).then((resultValue: string) => {
-      setResult(resultValue);
-    }).catch((err: any) => {
-      console.log(err);
-    });
-  }
+  const recorder = useRecorder()
+  const transcription = useTranscription()
+  const wavPathRef = useRef('')
 
   useEffect(() => {
-    Events.On('time', (timeValue: any) => {
-      setTime(timeValue.data);
-    });
-    // Reload WML so it picks up the wml tags
-    WML.Reload();
-  }, []);
+    transcription.checkWhisper()
+  }, [])
+
+  const handleStart = async () => {
+    try {
+      await recorder.startRecording()
+    } catch (err: any) {
+      console.error('Failed to start recording:', err)
+    }
+  }
+
+  const handleStop = async () => {
+    try {
+      const path = await recorder.stopRecording()
+      wavPathRef.current = path
+      recorder.setTranscribing()
+      await transcription.transcribe(path)
+      recorder.setIdle()
+    } catch (err: any) {
+      console.error('Failed to stop/transcribe:', err)
+      recorder.setIdle()
+    }
+  }
+
+  const handleSave = async () => {
+    if (!wavPathRef.current) return
+    try {
+      await transcription.saveToFile(wavPathRef.current)
+    } catch (err: any) {
+      console.error('Failed to save:', err)
+    }
+  }
+
+  const isIdle = recorder.state === 'idle'
+  const isRecording = recorder.state === 'recording'
+  const isPaused = recorder.state === 'paused'
+  const isTranscribing = recorder.state === 'transcribing'
+  const isActive = isRecording || isPaused
 
   return (
     <div className="container">
-      <div>
-        <a data-wml-openURL="https://wails.io">
-          <img src="/wails.png" className="logo" alt="Wails logo"/>
-        </a>
-        <a data-wml-openURL="https://reactjs.org">
-          <img src="/react.svg" className="logo react" alt="React logo"/>
-        </a>
-      </div>
-      <h1>Wails + React</h1>
-      <div className="result">{result}</div>
-      <div className="card">
-        <div className="input-box">
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} type="text" autoComplete="off"/>
-          <button className="btn" onClick={doGreet}>Greet</button>
+      <header className="app-header">
+        <h1>Meeting Transcriber</h1>
+        <p className="subtitle">On-device audio transcription</p>
+      </header>
+
+      {transcription.whisperAvailable === false && (
+        <div className="warning">
+          whisper-cpp not found. Please install: <code>brew install whisper-cpp</code>
         </div>
+      )}
+
+      <div className="controls">
+        {isIdle && !isTranscribing && (
+          <RecordButton
+            onClick={handleStart}
+            disabled={transcription.whisperAvailable === false}
+          />
+        )}
+
+        {isActive && (
+          <div className="active-controls">
+            <PauseResumeButton
+              isPaused={isPaused}
+              onPause={recorder.pauseRecording}
+              onResume={recorder.resumeRecording}
+            />
+            <StopButton onClick={handleStop} />
+          </div>
+        )}
+
+        {isActive && (
+          <div className="recording-status">
+            <span className={`status-dot ${isPaused ? 'paused' : 'recording'}`} />
+            {isPaused ? 'Paused' : 'Recording'}
+          </div>
+        )}
       </div>
-      <div className="footer">
-        <div><p>Click on the Wails logo to learn more</p></div>
-        <div><p>{time}</p></div>
-      </div>
+
+      {isActive && (
+        <Spectrum active={isActive} />
+      )}
+
+      {(isActive || isTranscribing) && (
+        <Timer seconds={recorder.elapsed} />
+      )}
+
+      <TranscriptView
+        text={transcription.text}
+        savedPath={transcription.savedPath}
+        isTranscribing={transcription.isTranscribing}
+        error={transcription.error}
+        onSave={handleSave}
+      />
     </div>
   )
 }
