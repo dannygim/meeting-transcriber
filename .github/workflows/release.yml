@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install system dependencies
+        run: |
+          brew install portaudio
+
+      - name: Install Wails v3
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend && pnpm install
+
+      - name: Build frontend
+        run: |
+          cd frontend && pnpm run build
+
+      - name: Build application
+        run: |
+          wails3 task build
+
+      - name: Zip application
+        run: |
+          cd bin && zip -r ../meeting-transcriber_arm64.zip meeting-transcriber.app
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meeting-transcriber-arm64
+          path: meeting-transcriber_arm64.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Prepare release files
+        run: |
+          mkdir -p bin
+          cp dist/meeting-transcriber-arm64/meeting-transcriber_arm64.zip bin/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            bin/meeting-transcriber_arm64.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
