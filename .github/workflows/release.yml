@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - runner: macos-14
+            arch: arm64
+          - runner: macos-13
+            arch: amd64
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install system dependencies
+        run: |
+          brew install portaudio
+
+      - name: Install Wails v3
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend && npm install
+
+      - name: Build frontend
+        run: |
+          cd frontend && npm run build
+
+      - name: Build application
+        run: |
+          wails3 task build
+
+      - name: Zip application
+        run: |
+          cd bin && zip -r ../meeting-transcriber_${{ matrix.arch }}.zip meeting-transcriber.app
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meeting-transcriber-${{ matrix.arch }}
+          path: meeting-transcriber_${{ matrix.arch }}.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          install-only: true
+
+      - name: Prepare release files
+        run: |
+          mkdir -p bin
+          cp dist/meeting-transcriber-arm64/meeting-transcriber_arm64.zip bin/
+          cp dist/meeting-transcriber-amd64/meeting-transcriber_amd64.zip bin/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            bin/meeting-transcriber_arm64.zip
+            bin/meeting-transcriber_amd64.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

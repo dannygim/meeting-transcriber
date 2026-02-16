@@ -1,8 +1,11 @@
-module changeme
+module github.com/dannygim/meeting-transcriber
 
 go 1.25
 
-require github.com/wailsapp/wails/v3 v3.0.0-alpha.71
+require (
+	github.com/gordonklaus/portaudio v0.0.0-20260203164431-765aa7dfa631
+	github.com/wailsapp/wails/v3 v3.0.0-alpha.71
+)
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
