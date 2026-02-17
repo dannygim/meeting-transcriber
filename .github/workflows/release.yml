@@ -48,12 +48,6 @@ jobs:
       - name: Build and package application
         run: wails3 task package
 
-      - name: Create archive and checksums
-        run: |
-          VERSION=${GITHUB_REF_NAME#v}
-          cd bin && zip -r "../meeting-transcriber_${VERSION}_darwin_arm64.zip" meeting-transcriber.app
-          cd .. && shasum -a 256 "meeting-transcriber_${VERSION}_darwin_arm64.zip" > checksums.txt
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -62,6 +56,16 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          ZIP="meeting-transcriber_${VERSION}_darwin_arm64.zip"
+          cd bin && zip -r "../${ZIP}" meeting-transcriber.app
+          cd .. && shasum -a 256 "${ZIP}" > checksums.txt
+          gh release upload "${GITHUB_REF_NAME}" "${ZIP}" checksums.txt
 
       - name: Update Homebrew tap
         env:
