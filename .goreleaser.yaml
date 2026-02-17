@@ -1,21 +1,33 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
+
+project_name: meeting-transcriber
 
 before:
   hooks:
-    - go mod tidy
+    - cp -r bin/meeting-transcriber.app meeting-transcriber.app
 
 builds:
-  - skip: true
+  - id: meeting-transcriber
+    builder: prebuilt
+    goos:
+      - darwin
+    goarch:
+      - arm64
+    prebuilt:
+      path: "bin/meeting-transcriber.app/Contents/MacOS/meeting-transcriber"
+    binary: meeting-transcriber
 
 archives:
-  - id: macos
+  - id: default
     format: zip
-    name_template: "meeting-transcriber_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
-      - bin/meeting-transcriber.app/**/*
+      - src: "meeting-transcriber.app/**"
 
 checksum:
   name_template: "checksums.txt"
+  algorithm: sha256
 
 changelog:
   sort: asc
@@ -25,6 +37,8 @@ changelog:
       - "^test:"
       - "^ci:"
       - "^chore:"
+      - Merge pull request
+      - Merge branch
 
 release:
   github:
@@ -32,27 +46,28 @@ release:
     name: meeting-transcriber
   draft: false
   prerelease: auto
-  name_template: "v{{ .Version }}"
 
 brews:
-  - repository:
+  - name: meeting-transcriber
+    repository:
       owner: dannygim
       name: homebrew-tap
-    directory: Casks
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
     homepage: "https://github.com/dannygim/meeting-transcriber"
     description: "On-device meeting audio transcription app powered by whisper.cpp"
     license: "MIT"
-    caveats: |
-      This app requires the following dependencies:
-        brew install portaudio whisper-cpp
-
-      You also need to download a Whisper model:
-        mkdir -p ~/models && curl -L -o ~/models/ggml-large-v3.bin \
-          https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
-
-      Since this app is unsigned, you may need to allow it in System Preferences > Security & Privacy.
-    install: |
-      prefix.install "meeting-transcriber.app"
     dependencies:
       - name: portaudio
       - name: whisper-cpp
+    install: |
+      prefix.install "meeting-transcriber.app"
+    caveats: |
+      You need to download a Whisper model:
+        mkdir -p ~/models && curl -L -o ~/models/ggml-large-v3.bin \
+          https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
+
+      Since this app is unsigned, you may need to allow it in:
+        System Preferences > Security & Privacy
+    test: |
+      assert_predicate prefix/"meeting-transcriber.app", :exist?

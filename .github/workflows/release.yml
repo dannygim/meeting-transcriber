@@ -9,16 +9,19 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  release:
     runs-on: macos-14
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          go-version-file: "go.mod"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -35,7 +38,7 @@ jobs:
 
       - name: Install Wails v3
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
-          
+
       - name: Install frontend dependencies
         run: cd frontend && pnpm install
 
@@ -45,38 +48,12 @@ jobs:
       - name: Build and package application
         run: wails3 task package
 
-      - name: Zip application
-        run: |
-          cd bin && zip -r ../meeting-transcriber_arm64.zip meeting-transcriber.app
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
-          name: meeting-transcriber-arm64
-          path: meeting-transcriber_arm64.zip
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-
-      - name: Prepare release files
-        run: |
-          mkdir -p bin
-          cp dist/meeting-transcriber-arm64/meeting-transcriber_arm64.zip bin/
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            bin/meeting-transcriber_arm64.zip
-          generate_release_notes: true
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.GH_PAT }}
