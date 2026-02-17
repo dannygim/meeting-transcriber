@@ -40,17 +40,9 @@ jobs:
         run: |
           go install github.com/wailsapp/wails/v3/cmd/wails3@latest
 
-      - name: Install frontend dependencies
+      - name: Build and package application
         run: |
-          cd frontend && npm install
-
-      - name: Build frontend
-        run: |
-          cd frontend && npm run build
-
-      - name: Build application
-        run: |
-          wails3 task build
+          wails3 task package
 
       - name: Zip application
         run: |
