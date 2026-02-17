@@ -23,6 +23,3 @@ release:
     name: meeting-transcriber
   draft: false
   prerelease: auto
-  extra_files:
-    - glob: "meeting-transcriber_*.zip"
-    - glob: "checksums.txt"
