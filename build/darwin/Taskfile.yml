@@ -71,7 +71,7 @@ tasks:
       - mkdir -p {{.BIN_DIR}}
       - mv "bin/{{.APP_NAME}}-darwin-{{.DOCKER_ARCH}}" "{{.OUTPUT}}"
     vars:
-      DOCKER_ARCH: '{{if eq .ARCH "arm64"}}arm64{{else if eq .ARCH "amd64"}}amd64{{else}}arm64{{end}}'
+      DOCKER_ARCH: arm64
       DEFAULT_OUTPUT: '{{.BIN_DIR}}/{{.APP_NAME}}'
       OUTPUT: '{{ .OUTPUT | default .DEFAULT_OUTPUT }}'
       # Mount Go module cache for faster builds
@@ -93,48 +93,12 @@ tasks:
             fi
           done | tr '\n' ' '
 
-  build:universal:
-    summary: Builds darwin universal binary (arm64 + amd64)
-    deps:
-      - task: build
-        vars:
-          ARCH: amd64
-          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-amd64"
-      - task: build
-        vars:
-          ARCH: arm64
-          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-arm64"
-    cmds:
-      - task: '{{if eq OS "darwin"}}build:universal:lipo:native{{else}}build:universal:lipo:go{{end}}'
-
-  build:universal:lipo:native:
-    summary: Creates universal binary using native lipo (macOS)
-    internal: true
-    cmds:
-      - lipo -create -output "{{.BIN_DIR}}/{{.APP_NAME}}" "{{.BIN_DIR}}/{{.APP_NAME}}-amd64" "{{.BIN_DIR}}/{{.APP_NAME}}-arm64"
-      - rm "{{.BIN_DIR}}/{{.APP_NAME}}-amd64" "{{.BIN_DIR}}/{{.APP_NAME}}-arm64"
-
-  build:universal:lipo:go:
-    summary: Creates universal binary using wails3 tool lipo (Linux/Windows)
-    internal: true
-    cmds:
-      - wails3 tool lipo -output "{{.BIN_DIR}}/{{.APP_NAME}}" -input "{{.BIN_DIR}}/{{.APP_NAME}}-amd64" -input "{{.BIN_DIR}}/{{.APP_NAME}}-arm64"
-      - rm -f "{{.BIN_DIR}}/{{.APP_NAME}}-amd64" "{{.BIN_DIR}}/{{.APP_NAME}}-arm64"
-
   package:
     summary: Packages the application into a `.app` bundle
     deps:
       - task: build
     cmds:
       - task: create:app:bundle
-
-  package:universal:
-    summary: Packages darwin universal binary (arm64 + amd64)
-    deps:
-      - task: build:universal
-    cmds:
-      - task: create:app:bundle
-
 
   create:app:bundle:
     summary: Creates an `.app` bundle
