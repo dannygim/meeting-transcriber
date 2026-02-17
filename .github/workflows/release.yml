@@ -76,7 +76,7 @@ jobs:
           SHA256=$(shasum -a 256 "$ZIP" | awk '{print $1}')
           URL="https://github.com/dannygim/meeting-transcriber/releases/download/${GITHUB_REF_NAME}/${ZIP}"
 
-          gh repo clone dannygim/homebrew-tap /tmp/homebrew-tap
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/dannygim/homebrew-tap.git" /tmp/homebrew-tap
           cat > /tmp/homebrew-tap/Formula/meeting-transcriber.rb <<RUBY
           class MeetingTranscriber < Formula
             desc "On-device meeting audio transcription app powered by whisper.cpp"
