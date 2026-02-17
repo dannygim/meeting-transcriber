@@ -3,31 +3,8 @@ version: 2
 
 project_name: meeting-transcriber
 
-before:
-  hooks:
-    - cp -r bin/meeting-transcriber.app meeting-transcriber.app
-
 builds:
-  - id: meeting-transcriber
-    builder: prebuilt
-    goos:
-      - darwin
-    goarch:
-      - arm64
-    prebuilt:
-      path: "bin/meeting-transcriber.app/Contents/MacOS/meeting-transcriber"
-    binary: meeting-transcriber
-
-archives:
-  - id: default
-    format: zip
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    files:
-      - src: "meeting-transcriber.app/**"
-
-checksum:
-  name_template: "checksums.txt"
-  algorithm: sha256
+  - skip: true
 
 changelog:
   sort: asc
@@ -46,28 +23,6 @@ release:
     name: meeting-transcriber
   draft: false
   prerelease: auto
-
-brews:
-  - name: meeting-transcriber
-    repository:
-      owner: dannygim
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    directory: Formula
-    homepage: "https://github.com/dannygim/meeting-transcriber"
-    description: "On-device meeting audio transcription app powered by whisper.cpp"
-    license: "MIT"
-    dependencies:
-      - name: portaudio
-      - name: whisper-cpp
-    install: |
-      prefix.install "meeting-transcriber.app"
-    caveats: |
-      You need to download a Whisper model:
-        mkdir -p ~/models && curl -L -o ~/models/ggml-large-v3.bin \
-          https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
-
-      Since this app is unsigned, you may need to allow it in:
-        System Preferences > Security & Privacy
-    test: |
-      assert_predicate prefix/"meeting-transcriber.app", :exist?
+  extra_files:
+    - glob: "meeting-transcriber_*.zip"
+    - glob: "checksums.txt"
