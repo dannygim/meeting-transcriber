@@ -31,24 +31,19 @@ jobs:
           version: 10
 
       - name: Install system dependencies
-        run: |
-          brew install portaudio
+        run: brew install portaudio
 
       - name: Install Wails v3
-        run: |
-          go install github.com/wailsapp/wails/v3/cmd/wails3@latest
-
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+          
       - name: Install frontend dependencies
-        run: |
-          cd frontend && pnpm install
+        run: cd frontend && pnpm install
 
       - name: Build frontend
-        run: |
-          cd frontend && pnpm run build
+        run: cd frontend && pnpm run build
 
-      - name: Build application
-        run: |
-          wails3 task build
+      - name: Build and package application
+        run: wails3 task package
 
       - name: Zip application
         run: |
