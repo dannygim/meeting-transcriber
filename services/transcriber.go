@@ -136,6 +136,11 @@ func (t *TranscribeService) GetModelPath() string {
 	return t.modelPath
 }
 
+func (t *TranscribeService) RefreshModelPath() string {
+	t.modelPath = t.findModelPath()
+	return t.modelPath
+}
+
 func (t *TranscribeService) SetLanguage(lang string) error {
 	if lang == "" {
 		return fmt.Errorf("language cannot be empty")

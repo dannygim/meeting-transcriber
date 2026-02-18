@@ -19,6 +19,7 @@ func main() {
 		Services: []application.Service{
 			application.NewService(&services.AudioService{}),
 			application.NewService(&services.TranscribeService{}),
+			application.NewService(&services.ModelService{}),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
