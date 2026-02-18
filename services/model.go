@@ -77,8 +77,8 @@ func (m *ModelService) ServiceShutdown() error {
 }
 
 func (m *ModelService) GetModelsDir() string {
-	home := os.Getenv("HOME")
-	if home == "" {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
 		return ""
 	}
 	return filepath.Join(home, ".local", "share", "whisper-cpp", "models")
@@ -166,6 +166,15 @@ func (m *ModelService) doDownload(ctx context.Context, model ModelInfo, dir stri
 		return
 	}
 
+	// Verify the directory is writable before starting the download
+	testFile, err := os.CreateTemp(dir, ".model-download-writetest-*")
+	if err != nil {
+		emit(DownloadProgress{ModelName: model.Name, Error: fmt.Sprintf("directory is not writable: %v", err)})
+		return
+	}
+	testFile.Close()
+	os.Remove(testFile.Name())
+
 	finalPath := filepath.Join(dir, model.FileName)
 	partPath := finalPath + ".part"
 
@@ -199,19 +208,18 @@ func (m *ModelService) doDownload(ctx context.Context, model ModelInfo, dir stri
 		emit(DownloadProgress{ModelName: model.Name, Error: fmt.Sprintf("failed to create file: %v", err)})
 		return
 	}
-	defer f.Close()
 
 	buf := make([]byte, 32*1024)
 	var loaded int64
 	lastEmit := time.Time{}
+	var downloadErr error
 
 	for {
 		n, readErr := resp.Body.Read(buf)
 		if n > 0 {
 			if _, writeErr := f.Write(buf[:n]); writeErr != nil {
-				os.Remove(partPath)
-				emit(DownloadProgress{ModelName: model.Name, Error: fmt.Sprintf("write failed: %v", writeErr)})
-				return
+				downloadErr = fmt.Errorf("write failed: %v", writeErr)
+				break
 			}
 			loaded += int64(n)
 
@@ -236,19 +244,22 @@ func (m *ModelService) doDownload(ctx context.Context, model ModelInfo, dir stri
 				break
 			}
 			if ctx.Err() == context.Canceled {
-				f.Close()
-				os.Remove(partPath)
-				emit(DownloadProgress{ModelName: model.Name, Error: "cancelled"})
-				return
+				downloadErr = fmt.Errorf("cancelled")
+			} else {
+				downloadErr = fmt.Errorf("download failed: %v", readErr)
 			}
-			f.Close()
-			os.Remove(partPath)
-			emit(DownloadProgress{ModelName: model.Name, Error: fmt.Sprintf("download failed: %v", readErr)})
-			return
+			break
 		}
 	}
 
 	f.Close()
+
+	if downloadErr != nil {
+		os.Remove(partPath)
+		emit(DownloadProgress{ModelName: model.Name, Error: downloadErr.Error()})
+		return
+	}
+
 	if err := os.Rename(partPath, finalPath); err != nil {
 		os.Remove(partPath)
 		emit(DownloadProgress{ModelName: model.Name, Error: fmt.Sprintf("failed to finalize file: %v", err)})

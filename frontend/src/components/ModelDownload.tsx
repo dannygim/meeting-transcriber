@@ -19,9 +19,9 @@ interface Props {
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(0)} MB`
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+  if (bytes < 1000 * 1000) return `${(bytes / 1000).toFixed(0)} KB`
+  if (bytes < 1000 * 1000 * 1000) return `${(bytes / (1000 * 1000)).toFixed(0)} MB`
+  return `${(bytes / (1000 * 1000 * 1000)).toFixed(1)} GB`
 }
 
 export function ModelDownload({ models, downloading, progress, error, onDownload, onCancel }: Props) {
@@ -48,7 +48,14 @@ export function ModelDownload({ models, downloading, progress, error, onDownload
                 <span className="model-check">Downloaded</span>
               ) : downloading && progress && progress.modelName === m.name ? (
                 <div className="model-progress">
-                  <div className="progress-bar">
+                  <div
+                    className="progress-bar"
+                    role="progressbar"
+                    aria-valuenow={Math.round(progress.percent)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Downloading ${m.name} model`}
+                  >
                     <div
                       className="progress-bar-fill"
                       style={{ width: `${progress.percent}%` }}
