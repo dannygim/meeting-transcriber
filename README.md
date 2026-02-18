@@ -11,33 +11,27 @@ Built with [Wails v3](https://v3.wails.io/) (Go + React + TypeScript).
 - Save transcriptions as Markdown files
 - Dark theme macOS-native UI
 
-## Prerequisites
+## Install
 
 ```bash
-brew install portaudio whisper-cpp
+brew tap dannygim/tap
+brew install --cask meeting-transcriber
 ```
 
-Download a Whisper model (choose one):
+This installs the app to `/Applications/` and automatically pulls in dependencies (`portaudio`, `whisper-cpp`).
+
+After installing, download a Whisper model from the app's settings, or manually:
 
 ```bash
-# Large v3 (best quality, ~3GB)
-mkdir -p models && curl -L -o models/ggml-large-v3.bin \
+mkdir -p ~/models && curl -L -o ~/models/ggml-large-v3.bin \
   https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
-
-# Medium (balanced, ~1.5GB)
-mkdir -p models && curl -L -o models/ggml-medium.bin \
-  https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin
-
-# Base (fastest, ~142MB)
-mkdir -p models && curl -L -o models/ggml-base.bin \
-  https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
 ```
 
 ## Development
 
 ```bash
 # Install frontend dependencies
-cd frontend && npm install && cd ..
+cd frontend && pnpm install && cd ..
 
 # Run in development mode (hot-reload)
 wails3 dev
