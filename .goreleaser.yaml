@@ -70,8 +70,7 @@ homebrew_casks:
       - formula: whisper-cpp
     caveats: |
       You need to download a Whisper model:
-        mkdir -p ~/models && curl -L -o ~/models/ggml-large-v3.bin \
-          https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
+        mkdir -p ~/models && curl -Lo ~/models/ggml-large-v3.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
 
       Since this app is unsigned, you may need to allow it in:
         System Preferences > Security & Privacy
