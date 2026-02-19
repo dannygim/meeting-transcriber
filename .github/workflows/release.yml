@@ -59,4 +59,49 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Update Homebrew Cask
+        env:
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA256=$(shasum -a 256 dist/meeting-transcriber_${VERSION}_darwin_arm64.zip | awk '{print $1}')
+
+          cat > /tmp/meeting-transcriber.rb <<'CASK'
+          cask "meeting-transcriber" do
+            version "__VERSION__"
+            sha256 "__SHA256__"
+
+            url "https://github.com/dannygim/meeting-transcriber/releases/download/v#{version}/meeting-transcriber_#{version}_darwin_arm64.zip"
+            name "Meeting Transcriber"
+            desc "On-device meeting audio transcription app powered by whisper.cpp"
+            homepage "https://github.com/dannygim/meeting-transcriber"
+
+            depends_on formula: "portaudio"
+            depends_on formula: "whisper-cpp"
+
+            app "meeting-transcriber.app"
+
+            caveats <<~EOS
+              You need to download a Whisper model:
+                mkdir -p ~/models && curl -Lo ~/models/ggml-large-v3.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
+
+              Since this app is unsigned, you may need to allow it in:
+                System Preferences > Security & Privacy
+            EOS
+
+            uninstall quit: "com.dannygim.meeting-transcriber"
+          end
+          CASK
+
+          sed -i '' "s/__VERSION__/${VERSION}/g; s/__SHA256__/${SHA256}/g" /tmp/meeting-transcriber.rb
+
+          git clone "https://x-access-token:${HOMEBREW_TAP_GITHUB_TOKEN}@github.com/dannygim/homebrew-tap.git" /tmp/homebrew-tap
+          mkdir -p /tmp/homebrew-tap/Casks
+          cp /tmp/meeting-transcriber.rb /tmp/homebrew-tap/Casks/meeting-transcriber.rb
+          cd /tmp/homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/meeting-transcriber.rb
+          git commit -m "Update meeting-transcriber to ${VERSION}"
+          git push
