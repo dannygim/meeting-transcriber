@@ -55,25 +55,3 @@ release:
     name: meeting-transcriber
   draft: false
   prerelease: auto
-
-homebrew_casks:
-  - name: meeting-transcriber
-    repository:
-      owner: dannygim
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    directory: Casks
-    homepage: "https://github.com/dannygim/meeting-transcriber"
-    description: "On-device meeting audio transcription app powered by whisper.cpp"
-    dependencies:
-      - formula: portaudio
-      - formula: whisper-cpp
-    caveats: |
-      You need to download a Whisper model:
-        mkdir -p ~/models && curl -Lo ~/models/ggml-large-v3.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
-
-      Since this app is unsigned, you may need to allow it in:
-        System Preferences > Security & Privacy
-    uninstall:
-      quit:
-        - com.dannygim.meeting-transcriber
