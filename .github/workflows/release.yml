@@ -83,11 +83,11 @@ jobs:
             app "meeting-transcriber.app"
 
             caveats <<~EOS
+              This app is unsigned. To remove the macOS quarantine warning, run:
+                xattr -cr /Applications/meeting-transcriber.app
+
               You need to download a Whisper model:
                 mkdir -p ~/models && curl -Lo ~/models/ggml-large-v3.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin
-
-              Since this app is unsigned, you may need to allow it in:
-                System Preferences > Security & Privacy
             EOS
 
             uninstall quit: "com.dannygim.meeting-transcriber"
